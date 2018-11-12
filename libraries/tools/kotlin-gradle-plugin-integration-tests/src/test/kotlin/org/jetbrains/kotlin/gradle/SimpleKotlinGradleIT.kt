@@ -111,6 +111,19 @@ class SimpleKotlinGradleIT : BaseGradleIT() {
     @Test
     fun testGroovyInterop() {
         Project("groovyInterop").build("build") {
+            assertTasksExecuted(":test")
+            assertContains("GroovyInteropTest PASSED")
+            assertSuccessful()
+        }
+    }
+
+    //Proguard corrupts RuntimeInvisibleParameterAnnotations/RuntimeVisibleParameterAnnotations tables:
+    // https://sourceforge.net/p/proguard/bugs/735/
+    @Test
+    fun testInteropWithProguarded() {
+        Project("interopWithProguarded").build("build") {
+            assertTasksExecuted(":test")
+            assertContains("InteropWithProguardedTest PASSED")
             assertSuccessful()
         }
     }
