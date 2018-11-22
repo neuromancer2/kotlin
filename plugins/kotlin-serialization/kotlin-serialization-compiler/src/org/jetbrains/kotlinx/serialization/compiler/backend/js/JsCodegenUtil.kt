@@ -33,6 +33,7 @@ import org.jetbrains.kotlinx.serialization.compiler.backend.common.findTypeSeria
 import org.jetbrains.kotlinx.serialization.compiler.backend.common.primaryPropertiesDescriptorsMap
 import org.jetbrains.kotlinx.serialization.compiler.backend.jvm.contextSerializerId
 import org.jetbrains.kotlinx.serialization.compiler.backend.jvm.enumSerializerId
+import org.jetbrains.kotlinx.serialization.compiler.backend.jvm.polymorphicSerializerId
 import org.jetbrains.kotlinx.serialization.compiler.backend.jvm.referenceArraySerializerId
 import org.jetbrains.kotlinx.serialization.compiler.resolve.*
 
@@ -131,6 +132,8 @@ internal fun SerializerJsTranslator.serializerTower(property: SerializableProper
         ?.let { expr -> if (property.type.isMarkedNullable) JsNew(nullableSerClass, listOf(expr)) else expr }
 }
 
+private val classIdsWhichNeedKClass = setOf(enumSerializerId, contextSerializerId, polymorphicSerializerId)
+
 internal fun SerializerJsTranslator.serializerInstance(
     serializerClass: ClassDescriptor?,
     module: ModuleDescriptor,
@@ -146,7 +149,7 @@ internal fun SerializerJsTranslator.serializerInstance(
     if (serializerClass.kind == ClassKind.OBJECT) {
         return context.serializerObjectGetter(serializerClass)
     } else {
-        var args = if (serializerClass.classId == enumSerializerId || serializerClass.classId == contextSerializerId)
+        var args = if (serializerClass.classId in classIdsWhichNeedKClass)
             listOf(createGetKClassExpression(kType.toClassDescriptor!!))
         else kType.arguments.map {
             val argSer = findTypeSerializerOrContext(module, it.type, sourceElement = serializerClass.findPsi())
