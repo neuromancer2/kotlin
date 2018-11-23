@@ -19,7 +19,9 @@ package org.jetbrains.kotlinx.serialization.compiler.backend.js
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.js.backend.ast.*
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
+import org.jetbrains.kotlin.js.translate.context.Namer.GET_KCLASS
 import org.jetbrains.kotlin.js.translate.context.TranslationContext
+import org.jetbrains.kotlin.js.translate.expression.ExpressionVisitor
 import org.jetbrains.kotlin.js.translate.expression.translateAndAliasParameters
 import org.jetbrains.kotlin.js.translate.reference.ReferenceTranslator
 import org.jetbrains.kotlin.js.translate.utils.JsAstUtils
@@ -175,8 +177,8 @@ internal fun SerializerJsTranslator.serializerInstance(
 }
 
 internal fun SerializerJsTranslator.createGetKClassExpression(classDescriptor: ClassDescriptor): JsExpression =
-    JsInvocation(
-        context.namer().kotlin("getKClass"),
+    ExpressionVisitor.getPrimitiveClass(context, classDescriptor) ?: JsInvocation(
+        context.getReferenceToIntrinsic(GET_KCLASS),
         context.translateQualifiedReference(classDescriptor)
     )
 

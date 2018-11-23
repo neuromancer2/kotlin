@@ -284,50 +284,57 @@ public final class ExpressionVisitor extends TranslatorVisitor<JsNode> {
         return new JsInvocation(context.getReferenceToIntrinsic(GET_KCLASS), UtilsKt.getReferenceToJsClass(lhs.getType(), context));
     }
 
+    public static JsExpression getPrimitiveClass(@NotNull TranslationContext context, @NotNull ClassDescriptor descriptor) {
+        if (!context.getConfig().isAtLeast(LanguageVersion.KOTLIN_1_2) || findPrimitiveClassesObject(context) == null) return null;
+
+        FqName fqName = DescriptorUtilsKt.getFqNameSafe(descriptor);
+        switch (fqName.asString()) {
+            case "kotlin.Boolean":
+            case "kotlin.Byte":
+            case "kotlin.Short":
+            case "kotlin.Int":
+            case "kotlin.Float":
+            case "kotlin.Double":
+            case "kotlin.String":
+            case "kotlin.Array":
+            case "kotlin.Any":
+            case "kotlin.Throwable":
+            case "kotlin.Number":
+            case "kotlin.Nothing":
+            case "kotlin.BooleanArray":
+            case "kotlin.CharArray":
+            case "kotlin.ByteArray":
+            case "kotlin.ShortArray":
+            case "kotlin.IntArray":
+            case "kotlin.LongArray":
+            case "kotlin.FloatArray":
+            case "kotlin.DoubleArray":
+                return getKotlinPrimitiveClassRef(context, StringUtil.decapitalize(fqName.shortName().asString()) + "Class");
+
+            default: {
+                if (descriptor instanceof FunctionClassDescriptor) {
+                    FunctionClassDescriptor functionClassDescriptor = (FunctionClassDescriptor) descriptor;
+                    if (functionClassDescriptor.getFunctionKind() == FunctionClassDescriptor.Kind.Function) {
+                        ClassDescriptor primitivesObject = findPrimitiveClassesObject(context);
+                        assert primitivesObject != null;
+                        FunctionDescriptor function = DescriptorUtils.getFunctionByName(
+                                primitivesObject.getUnsubstitutedMemberScope(), Name.identifier("functionClass"));
+                        JsExpression functionRef = pureFqn(context.getInlineableInnerNameForDescriptor(function), null);
+                        return new JsInvocation(functionRef, new JsIntLiteral(functionClassDescriptor.getArity()));
+                    }
+                }
+                break;
+            }
+        }
+        return null;
+    }
+
     private static JsExpression getPrimitiveClass(@NotNull TranslationContext context, @NotNull KotlinType type) {
         if (!context.getConfig().isAtLeast(LanguageVersion.KOTLIN_1_2) || findPrimitiveClassesObject(context) == null) return null;
 
         ClassifierDescriptor descriptor = type.getConstructor().getDeclarationDescriptor();
         if (descriptor instanceof ClassDescriptor) {
-            FqName fqName = DescriptorUtilsKt.getFqNameSafe(descriptor);
-            switch (fqName.asString()) {
-                case "kotlin.Boolean":
-                case "kotlin.Byte":
-                case "kotlin.Short":
-                case "kotlin.Int":
-                case "kotlin.Float":
-                case "kotlin.Double":
-                case "kotlin.String":
-                case "kotlin.Array":
-                case "kotlin.Any":
-                case "kotlin.Throwable":
-                case "kotlin.Number":
-                case "kotlin.Nothing":
-                case "kotlin.BooleanArray":
-                case "kotlin.CharArray":
-                case "kotlin.ByteArray":
-                case "kotlin.ShortArray":
-                case "kotlin.IntArray":
-                case "kotlin.LongArray":
-                case "kotlin.FloatArray":
-                case "kotlin.DoubleArray":
-                    return getKotlinPrimitiveClassRef(context, StringUtil.decapitalize(fqName.shortName().asString()) + "Class");
-
-                default: {
-                    if (descriptor instanceof FunctionClassDescriptor) {
-                        FunctionClassDescriptor functionClassDescriptor = (FunctionClassDescriptor) descriptor;
-                        if (functionClassDescriptor.getFunctionKind() == FunctionClassDescriptor.Kind.Function) {
-                            ClassDescriptor primitivesObject = findPrimitiveClassesObject(context);
-                            assert primitivesObject != null;
-                            FunctionDescriptor function = DescriptorUtils.getFunctionByName(
-                                    primitivesObject.getUnsubstitutedMemberScope(), Name.identifier("functionClass"));
-                            JsExpression functionRef = pureFqn(context.getInlineableInnerNameForDescriptor(function), null);
-                            return new JsInvocation(functionRef, new JsIntLiteral(functionClassDescriptor.getArity()));
-                        }
-                    }
-                    break;
-                }
-            }
+            return getPrimitiveClass(context, (ClassDescriptor) descriptor);
         }
         return null;
     }
