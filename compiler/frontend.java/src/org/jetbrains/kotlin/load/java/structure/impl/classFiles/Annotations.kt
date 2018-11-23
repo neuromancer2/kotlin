@@ -30,9 +30,13 @@ internal class AnnotationsAndParameterCollectorMethodVisitor(
         private val member: BinaryJavaMethodBase,
         private val context: ClassifierResolutionContext,
         private val signatureParser: BinaryClassSignatureParser,
-        private val parametersToSkipNumber: Int
+        private val parametersToSkipNumber: Int,
+        private val parametersCountInMethodDesc: Int
 ) : MethodVisitor(ASM_API_VERSION_FOR_CLASS_READING) {
     private var parameterIndex = 0
+
+    private var visibleAnnotableParameterCount = parametersCountInMethodDesc
+    private var invisibleAnnotableParameterCount = parametersCountInMethodDesc
 
     override fun visitAnnotationDefault(): AnnotationVisitor? {
         member.safeAs<BinaryJavaMethod>()?.hasAnnotationParameterDefaultValue = true
@@ -60,8 +64,19 @@ internal class AnnotationsAndParameterCollectorMethodVisitor(
                     desc, context, signatureParser
             )
 
+    @Suppress("NOTHING_TO_OVERRIDE")
+    override fun visitAnnotableParameterCount(parameterCount: Int, visible: Boolean) {
+        if (visible)
+            visibleAnnotableParameterCount = parameterCount
+        else {
+            invisibleAnnotableParameterCount = parameterCount
+        }
+    }
+
     override fun visitParameterAnnotation(parameter: Int, desc: String, visible: Boolean): AnnotationVisitor? {
-        val index = if (Opcodes.API_VERSION <= Opcodes.ASM6) parameter - parametersToSkipNumber else parameter
+        val parameterIndex =
+            parameter + parametersCountInMethodDesc - if (visible) visibleAnnotableParameterCount else invisibleAnnotableParameterCount
+        val index = parameterIndex - parametersToSkipNumber
         if (index < 0) return null
 
         try {
