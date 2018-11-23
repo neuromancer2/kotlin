@@ -74,9 +74,9 @@ internal class AnnotationsAndParameterCollectorMethodVisitor(
     }
 
     override fun visitParameterAnnotation(parameter: Int, desc: String, visible: Boolean): AnnotationVisitor? {
-        val parameterIndex =
+        val absoluteParameterIndex =
             parameter + parametersCountInMethodDesc - if (visible) visibleAnnotableParameterCount else invisibleAnnotableParameterCount
-        val index = parameterIndex - parametersToSkipNumber
+        val index = absoluteParameterIndex - parametersToSkipNumber
         if (index < 0) return null
 
         try {
