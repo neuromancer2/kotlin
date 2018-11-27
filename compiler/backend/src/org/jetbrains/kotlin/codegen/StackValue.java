@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license
+ * Copyright 2010-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license
  * that can be found in the license/LICENSE.txt file.
  */
 
@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns;
 import org.jetbrains.kotlin.builtins.PrimitiveType;
+import org.jetbrains.kotlin.codegen.binding.CodegenBinding;
 import org.jetbrains.kotlin.codegen.coroutines.CoroutineCodegenUtilKt;
 import org.jetbrains.kotlin.codegen.intrinsics.IntrinsicMethods;
 import org.jetbrains.kotlin.codegen.pseudoInsns.PseudoInsnsKt;
@@ -850,12 +851,21 @@ public abstract class StackValue {
                     SimpleFunctionDescriptor initial =
                             CoroutineCodegenUtilKt.unwrapInitialDescriptorForSuspendFunction((SimpleFunctionDescriptor) descriptor);
                     if (initial != null && initial.isSuspend()) {
-                        StackValue value = codegen.findLocalOrCapturedValue(initial.getOriginal());
-                        assert value != null : "Local suspend fun should be found in locals or in captured params: " +
-                                               descriptor +
-                                               " initial local suspend fun: " +
-                                               initial;
-                        return value;
+                        int index = codegen.lookupLocalIndex(initial.getOriginal());
+                        if (index >= 0) {
+                            return local(index, OBJECT_TYPE);
+                        }
+                        if (codegen.context.hasThisDescriptor()) {
+                            ClassDescriptor thisDescriptor = codegen.context.getThisDescriptor();
+                            if (thisDescriptor instanceof SyntheticClassDescriptorForLambda &&
+                                ((SyntheticClassDescriptorForLambda) thisDescriptor).isCallableReference()) {
+                                return codegen.findCapturedValue(initial.getOriginal());
+                            }
+                        }
+                        // For recursive suspend local function, just call invoke on this, it will create new coroutine automatically
+                        Type type = CodegenBinding.asmTypeForAnonymousClass(codegen.getBindingContext(), initial.getOriginal());
+                        codegen.v.visitVarInsn(ALOAD, 0);
+                        return onStack(type);
                     }
                 }
                 StackValue value = codegen.findLocalOrCapturedValue(descriptor.getOriginal());
