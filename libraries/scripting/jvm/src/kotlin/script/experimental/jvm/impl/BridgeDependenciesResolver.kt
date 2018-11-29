@@ -48,7 +48,7 @@ class BridgeDependenciesResolver(
                 classpath = classpath,
                 sources = this[ScriptCompilationConfiguration.ide.dependenciesSources].toClassPathOrEmpty(),
                 imports = defaultImports,
-                scripts = this[ScriptCompilationConfiguration.requireSources].toFilesOrEmpty()
+                scripts = this[ScriptCompilationConfiguration.importScripts].toFilesOrEmpty()
             )
 
             val refineFn = scriptCompilationConfiguration[ScriptCompilationConfiguration.refineConfigurationOnAnnotations]?.handler

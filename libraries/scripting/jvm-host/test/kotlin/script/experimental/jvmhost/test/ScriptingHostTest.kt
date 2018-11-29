@@ -42,7 +42,7 @@ class ScriptingHostTest : TestCase() {
         val greeting = "Hello from required!"
         val script = "val subj = RequiredClass().value\nprintln(\"Hello from \$subj!\")"
         val compilationConfiguration = createJvmCompilationConfigurationFromTemplate<SimpleScriptTemplate> {
-            requireSources(File(TEST_DATA_DIR, "importTest/requiredSrc.kt").toScriptSource())
+            importScripts(File(TEST_DATA_DIR, "importTest/requiredSrc.kt").toScriptSource())
         }
         val output = captureOut {
             BasicJvmScriptingHost().eval(script.toScriptSource(), compilationConfiguration, null).throwOnFailure()

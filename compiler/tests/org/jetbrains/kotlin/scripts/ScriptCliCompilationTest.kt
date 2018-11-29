@@ -122,20 +122,20 @@ abstract class TestScriptWithRequire
 
 object TestScriptWithRequireConfiguration : ScriptCompilationConfiguration(
     {
-        defaultImports(Require::class)
+        defaultImports(Import::class)
         jvm {
             dependenciesFromCurrentContext(wholeClasspath = true)
         }
         refineConfiguration {
-            onAnnotations(Require::class) { context: ScriptConfigurationRefinementContext ->
+            onAnnotations(Import::class) { context: ScriptConfigurationRefinementContext ->
                 val sources = context.collectedData?.get(ScriptCollectedData.foundAnnotations)
                     ?.flatMap {
-                        (it as? Require)?.sources?.map { sourceName -> FileScriptSource(File(testDataPath, sourceName)) } ?: emptyList()
+                        (it as? Import)?.sources?.map { sourceName -> FileScriptSource(File(testDataPath, sourceName)) } ?: emptyList()
                     }
                     ?.takeIf { it.isNotEmpty() }
                     ?: return@onAnnotations context.compilationConfiguration.asSuccess()
                 ScriptCompilationConfiguration(context.compilationConfiguration) {
-                    requireSources.append(sources)
+                    importScripts.append(sources)
                 }.asSuccess()
             }
         }
@@ -145,4 +145,4 @@ object TestScriptWithRequireConfiguration : ScriptCompilationConfiguration(
 @Target(AnnotationTarget.FILE)
 @Repeatable
 @Retention(AnnotationRetention.SOURCE)
-annotation class Require(vararg val sources: String)
+annotation class Import(vararg val sources: String)
