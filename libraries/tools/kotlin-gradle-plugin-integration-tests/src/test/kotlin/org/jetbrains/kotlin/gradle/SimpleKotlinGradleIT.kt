@@ -127,4 +127,13 @@ class SimpleKotlinGradleIT : BaseGradleIT() {
             assertSuccessful()
         }
     }
+
+    @Test
+    fun testScalaInterop() {
+        Project("scalaInterop").build("build") {
+            assertTasksExecuted(":test")
+            assertContains("ScalaInteropTest PASSED")
+            assertSuccessful()
+        }
+    }
 }
