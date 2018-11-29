@@ -51,15 +51,16 @@ class BridgeDependenciesResolver(
                 scripts = this[ScriptCompilationConfiguration.importScripts].toFilesOrEmpty()
             )
 
-            val refineFn = scriptCompilationConfiguration[ScriptCompilationConfiguration.refineConfigurationOnAnnotations]?.handler
-                ?: return DependenciesResolver.ResolveResult.Success(
-                    scriptCompilationConfiguration.toDependencies(oldClasspath),
-                    diagnostics
+            val refineResults = scriptCompilationConfiguration.refineWith(
+                scriptCompilationConfiguration[ScriptCompilationConfiguration.refineConfigurationOnAnnotations]?.handler,
+                scriptContents, processedScriptData
+            ).onSuccess {
+                it.refineWith(
+                    scriptCompilationConfiguration[ScriptCompilationConfiguration.refineConfigurationBeforeCompiling]?.handler,
+                    scriptContents, processedScriptData
                 )
+            }
 
-            val refineResults = refineFn(
-                ScriptConfigurationRefinementContext(scriptContents.toScriptSource(), scriptCompilationConfiguration, processedScriptData)
-            )
             val refinedConfiguration = when (refineResults) {
                 is ResultWithDiagnostics.Failure ->
                     return DependenciesResolver.ResolveResult.Failure(refineResults.reports.mapScriptReportsToDiagnostics())
@@ -104,3 +105,14 @@ internal fun List<SourceCode>?.toFilesOrEmpty() = this?.map {
     externalSource?.externalLocation?.toFile()
         ?: throw RuntimeException("Unsupported source in requireSources parameter - only local files are supported now (${externalSource?.externalLocation})")
 } ?: emptyList()
+
+fun ScriptCompilationConfiguration.refineWith(
+    handler: RefineScriptCompilationConfigurationHandler?, scriptContents: ScriptContents, processedScriptData: ScriptCollectedData
+): ResultWithDiagnostics<ScriptCompilationConfiguration> {
+
+    if (handler == null) return this.asSuccess()
+
+    return handler(
+        ScriptConfigurationRefinementContext(scriptContents.toScriptSource(), this, processedScriptData)
+    )
+}
