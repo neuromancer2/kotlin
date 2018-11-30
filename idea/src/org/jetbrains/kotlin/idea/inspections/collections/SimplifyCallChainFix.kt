@@ -50,8 +50,8 @@ class SimplifyCallChainFix(
             else -> ""
         }
 
-        val receiverExpressionOrEmptyString: Any =
-            if (!removeReceiverOfFirstCall && firstExpression is KtQualifiedExpression) firstExpression.receiverExpression else ""
+        val receiverExpressionOrEmptyString =
+            if (!removeReceiverOfFirstCall && firstExpression is KtQualifiedExpression) firstExpression.receiverExpression.text else ""
 
         val firstCallExpression = AbstractCallChainChecker.getCallExpression(firstExpression) ?: return
         factory.modifyArguments(firstCallExpression)
@@ -74,15 +74,11 @@ class SimplifyCallChainFix(
             firstCallArgumentList.takeIf { firstCallHasArguments }?.getTextInsideParentheses(),
             additionalArgument.takeIf { !firstCallHasArguments && !secondCallHasArguments },
             lambdaExpression?.text
-        ).joinToString(separator = ", ")
+        ).joinToString(separator = ",")
 
         val newCallText = conversion.replacement
-        val newQualifiedOrCallExpression = factory.createExpressionByPattern(
-            "$0$1$2($3)",
-            receiverExpressionOrEmptyString,
-            operationSign,
-            newCallText,
-            argumentsText
+        val newQualifiedOrCallExpression = factory.createExpression(
+            "$receiverExpressionOrEmptyString$operationSign$newCallText($argumentsText)"
         )
 
         if (lambdaExpression != null) {
@@ -97,7 +93,8 @@ class SimplifyCallChainFix(
         val project = qualifiedExpression.project
         val file = qualifiedExpression.containingKtFile
         val result = qualifiedExpression.replaced(newQualifiedOrCallExpression)
-        ShortenReferences.DEFAULT.process(result)
+        val reformatted = CodeStyleManager.getInstance(project).reformat(result)
+        ShortenReferences.DEFAULT.process(reformatted as KtElement)
         if (runOptimizeImports) {
             OptimizeImportsProcessor(project, file).run()
         }
