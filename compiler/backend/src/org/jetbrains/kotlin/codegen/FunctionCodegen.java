@@ -718,8 +718,6 @@ public class FunctionCodegen {
             String name = thisType.getClassName();
             int indexOfLambdaOrdinal = name.lastIndexOf("$");
             if (indexOfLambdaOrdinal > 0) {
-                int lambdaOrdinal = Integer.parseInt(name.substring(indexOfLambdaOrdinal + 1));
-
                 KtPureElement functionArgument = parentCodegen.element;
                 String functionName = "unknown";
                 if (functionArgument instanceof KtFunction) {
@@ -730,7 +728,7 @@ public class FunctionCodegen {
                     }
                 }
                 mv.visitLocalVariable(
-                        JvmAbi.LOCAL_VARIABLE_NAME_PREFIX_INLINE_ARGUMENT + lambdaOrdinal +  "$" + functionName,
+                        JvmAbi.LOCAL_VARIABLE_NAME_PREFIX_INLINE_ARGUMENT + "-" + functionName + "-" + name,
                         Type.INT_TYPE.getDescriptor(), null,
                         methodBegin, methodEnd,
                         lambdaFakeIndex);

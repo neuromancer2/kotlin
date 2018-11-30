@@ -265,8 +265,6 @@ class DebuggerClassNameProvider(
         get() = runReadAction { getRelevantElement(this.parent) }
 }
 
-private fun String.toJdiName() = replace('/', '.')
-
 private fun DebugProcess.findTargetClasses(outerClass: ReferenceType, lineAt: Int): List<ReferenceType> {
     val vmProxy = virtualMachineProxy
 
