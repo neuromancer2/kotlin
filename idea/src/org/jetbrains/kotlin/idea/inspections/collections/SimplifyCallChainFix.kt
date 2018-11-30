@@ -90,14 +90,46 @@ class SimplifyCallChainFix(
             callExpression?.moveFunctionLiteralOutsideParentheses()
         }
 
+        println()
+        println("1")
+        println(newQualifiedOrCallExpression.text)
+        println()
+
         val project = qualifiedExpression.project
         val file = qualifiedExpression.containingKtFile
         val result = qualifiedExpression.replaced(newQualifiedOrCallExpression)
+
+        println()
+        println("2")
+        println(result.text)
+        println("2")
+        println()
+
         val reformatted = CodeStyleManager.getInstance(project).reformat(result)
+
+        println()
+        println("3")
+        println(reformatted.text)
+        println("3")
+        println()
+
         ShortenReferences.DEFAULT.process(reformatted as KtElement)
+
+        println()
+        println("4")
+        println(reformatted.text)
+        println("4")
+        println()
+
         if (runOptimizeImports) {
             OptimizeImportsProcessor(project, file).run()
         }
+
+        println()
+        println("5")
+        println(file.text)
+        println("5")
+        println()
     }
 
     override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
