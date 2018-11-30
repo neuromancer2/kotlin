@@ -74,7 +74,7 @@ class SimplifyCallChainFix(
             firstCallArgumentList.takeIf { firstCallHasArguments }?.getTextInsideParentheses(),
             additionalArgument.takeIf { !firstCallHasArguments && !secondCallHasArguments },
             lambdaExpression?.text
-        ).joinToString(separator = ",")
+        ).joinToString(separator = ", ")
 
         val newCallText = conversion.replacement
         val newQualifiedOrCallExpression = factory.createExpressionByPattern(
@@ -97,8 +97,7 @@ class SimplifyCallChainFix(
         val project = qualifiedExpression.project
         val file = qualifiedExpression.containingKtFile
         val result = qualifiedExpression.replaced(newQualifiedOrCallExpression)
-        val reformatted = CodeStyleManager.getInstance(project).reformat(result)
-        ShortenReferences.DEFAULT.process(reformatted as KtElement)
+        ShortenReferences.DEFAULT.process(result)
         if (runOptimizeImports) {
             OptimizeImportsProcessor(project, file).run()
         }
