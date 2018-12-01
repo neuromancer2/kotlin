@@ -7,6 +7,11 @@ configureDist(project)
 configurePublishing(project)
 ext.javaHome = JDK_17
 
+//sourceSets {
+//    test {
+//        kotlin.srcDir "$buildDir/testSrc"
+//    }
+//}
 
 dependencies {
     expectedBy project(':kotlin-test:kotlin-test-annotations-common')
@@ -35,6 +40,10 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions.freeCompilerArgs = ["-Xallow-kotlin-package"]
 }
+//
+//task copyAnnotationsTest(type: Copy) {
+//    from("../")
+//}
 
 test {
     useTestNG()
